@@ -45,7 +45,7 @@ def matrix(s1,s2):
             elif s2[i]=="A":
                 m[0,3]=m[0,3]+1           
         else:
-            print "error"
+            print("error")
     return m
 def MPTS(m):
     s = 0.0
