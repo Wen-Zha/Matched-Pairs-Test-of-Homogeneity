@@ -66,7 +66,7 @@ def MPTS(m):
         p = 1 - chi2.cdf(s,6.0)
     return p
     
-def MPTS_aln(charset_aln):
+def MPTS_aln(aln):
     """inputs 
             charset_aln = alignment array of sites
         output
@@ -79,25 +79,22 @@ def MPTS_aln(charset_aln):
     # get list of p values where each entry is a p-value for a single pair of rows
 
     # return that list
-    p= []
-    for q in ite.combinations(len(aln),2) #just need to read in aln and get charset_aln to make work
-    m = matrix(aln_array[:,dat.charsets[sites]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[sites]][q[1]].tostring().upper().decode())
-    np.appned(p,MPTS(m)) 
+    aln_array = np.array([list(rec) for rec in aln], np.character)
+
+    dat.charsets.keys() #these are the names to the CHARSETS in the .nex file, which you can iterate over in a for loop
+    for name in dat.charsets:
+        sites = dat.charsets[name]
+        # slice the alignment to get the sub-alignment for the CHARSET
+        charset_aln = aln_array[:, sites]
+    p = [] #empty list of p values
+    for q in ite.combinations(len(aln),2): #iterating over all taxa for sites
+        m = matrix(aln_array[:,dat.charsets[sites]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[sites]][q[1]].tostring().upper().decode())
+        np.appned(p,MPTS(m)) 
     
     return p  
 
 if __name__ == '__main__': 
-    seq1= "TTTCTGTAGACTACAGCCGAACTGATACAATACAAGCACAAACAATTCACCGCGTCGCGCACAGTCGTCAAAGCGGCATTCCATAAAAGTTCATCCATACCCCGAGGTAACCTCACGTCGTCACGGGCTGACGTAATCACGAAAGCACCGCCCGACCGGTCAAGCCTCAGAAGGGTCGAACACGGACTCAGTCTCAAGTGCTCCTCCACAAACGTCATACTTAGTTCACCATCCCCGAGCCTATTTCCCTTAAAATGCGGTAACCCGGCCAGGGAGGAGAGAAAGAGTGG"
-    seq2= "CGTCTGGGATCTTTTGCCGGGCTGGGTCGCTACACGAACGCAGAGTTCTACTCCGGTCGCACTTGCGGATGAGTTGGTTACGGAGAGTGCGGGTCTTTTCCCAAAGTTCATTTCCCGTCGTTTCGGCCTGTTGTAATCATGTGTGCTCCGCCCCATCGGTGAAGCCCCGCTAGCGTATTACTCGGAATGTGTATCTAGTGCCAATTCATATACGTATAAGTTAGTTTATAATCTCCTCGCCTATTTCCTTAGAAATAGTATTATCGATCTTTGACGGAGTGAACTATGGG"
-    seq3= "CTACAGTTAAGTTCTGCAGAGCTGCTTGACTATACGATCAACGAATACAAGACGGGGCGCACAGGCATATAAGTGGGATTCCGTAAGATCATGTCTCTACCCAAAGGGTACATGTTGTCTTCACGGCCAAACCTAATCACGGGTCACCTGCCCAACAGTTGAAGGCGCGCCAGGCCGGCCCACGCATACAGACTCCAGAGCAACTCCATCAACGTCAAACTTACCTCAAAGTCTCCGCGGCTAGTCCCATTGAAATACGATTATCTCACCTTGCAAGAGTGAAAAAATCG"
-    seq4= "CTTCGGTATAGTTCTGCCGAGCTGGTTCGCTACATGATCAATGATTACGACCCTGGGCCCTCTGGCGTATGAGTGGGATGGTGTCAAATTTCTTCTTGACCGGCAGGTCACCTCTTGTCCTGAGGGCCGGGCGGCAGCAGGTCTGTGCTGTTTTGCCTGTAATGCCTCGTCAGGCGGGAGCACGGTTTTAGTATCCTTGCCTACTCTATTATTCTGAAATTTAGCTGATAATCTCTTCAGCTAATTCTTTAGAAATAGGCTTATCGTCCCGGGTTGGTGCGAAACATCCG"
-    
     aln_path = '/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
-    
-    m1 = matrix(seq1,seq2)
-    p = MPTS(m1) 
-    
-    print(p)
     
     dat = Nexus.Nexus()
 
@@ -105,18 +102,7 @@ if __name__ == '__main__':
 
     aln = AlignIO.read(open(aln_path), "nexus")
 
-    aln_array = np.array([list(rec) for rec in aln], np.character)
-
-    dat.charsets.keys() #these are the names to the CHARSETS in the .nex file, which you can iterate over in a for loop
-
-    results = {} # it would be better to use a Pandas data frame
-    for name in dat.charsets:
-        sites = dat.charsets[name]
-        # slice the alignment to get the sub-alignment for the CHARSET
- 
-        charset_aln = aln_array[:, sites]
-
-        results[name] = MPTS_aln(charset_aln)
+    
         
     s0 = aln_array[:,dat.charsets['COI_3rdpos']][0].tostring().upper().decode()
     s1 = aln_array[:,dat.charsets['COI_3rdpos']][1].tostring().upper().decode()
