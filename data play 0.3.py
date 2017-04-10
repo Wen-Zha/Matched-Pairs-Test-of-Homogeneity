@@ -52,16 +52,70 @@ def matrix(s1,s2):
             print("error")
     return m
 def MPTS(m):
+    """ inputs
+            m: a 4x4 matrix of proportions
+        outputs
+            p: is a p-value for the matched pairs test of symmetry
+    """
     s = 0.0
     for (i,j) in ite.product(range(0,4),range(0,4)):
         if i<j:
             n = (m[i,j]-m[j,i])**2
             d = m[i,j]+m[j,i]
             s = s+(float(n)/float(d))
-    return s
+        p = 1 - chi2.cdf(s,6.0)
+    return p
+    
+def MPTS_aln(charset_aln):
+    """inputs 
+            charset_aln = alignment array of sites
+        output
+            pval = dictionary of pvalues with corresponding charset pair
+    
+    """
+    #use itertools to loop over all sequences (itertools all pairs)
+    # make iterator for all pairs of rows in the numpy array called charset_aln
 
-def Alignment(aln_path):
+    # get list of p values where each entry is a p-value for a single pair of rows
 
+    # return that list
+    m = matrix(aln_array[:,sites],aln_array[:,sites])
+    p = MPTS(m)
+    
+    return p
+
+def seq(s):
+    string = ""
+    for i in s:
+        if i == b'A':
+            string += "A"#np.array2string(s[i])
+        elif i == b'T':
+            string += "T"#np.array2string(s[i])
+        elif i == b'C':
+            string += "C"#np.array2string(s[i])
+        elif i == b'G':
+            string += "G"#np.array2string(s[i])
+        elif i == b'-':
+            string += "-"#np.array2string(s[i])
+        elif i == b'?':
+            string += "-"#np.array2string(s[i])
+    #print(string)
+    return string
+    
+
+if __name__ == '__main__': 
+    seq1= "TTTCTGTAGACTACAGCCGAACTGATACAATACAAGCACAAACAATTCACCGCGTCGCGCACAGTCGTCAAAGCGGCATTCCATAAAAGTTCATCCATACCCCGAGGTAACCTCACGTCGTCACGGGCTGACGTAATCACGAAAGCACCGCCCGACCGGTCAAGCCTCAGAAGGGTCGAACACGGACTCAGTCTCAAGTGCTCCTCCACAAACGTCATACTTAGTTCACCATCCCCGAGCCTATTTCCCTTAAAATGCGGTAACCCGGCCAGGGAGGAGAGAAAGAGTGG"
+    seq2= "CGTCTGGGATCTTTTGCCGGGCTGGGTCGCTACACGAACGCAGAGTTCTACTCCGGTCGCACTTGCGGATGAGTTGGTTACGGAGAGTGCGGGTCTTTTCCCAAAGTTCATTTCCCGTCGTTTCGGCCTGTTGTAATCATGTGTGCTCCGCCCCATCGGTGAAGCCCCGCTAGCGTATTACTCGGAATGTGTATCTAGTGCCAATTCATATACGTATAAGTTAGTTTATAATCTCCTCGCCTATTTCCTTAGAAATAGTATTATCGATCTTTGACGGAGTGAACTATGGG"
+    seq3= "CTACAGTTAAGTTCTGCAGAGCTGCTTGACTATACGATCAACGAATACAAGACGGGGCGCACAGGCATATAAGTGGGATTCCGTAAGATCATGTCTCTACCCAAAGGGTACATGTTGTCTTCACGGCCAAACCTAATCACGGGTCACCTGCCCAACAGTTGAAGGCGCGCCAGGCCGGCCCACGCATACAGACTCCAGAGCAACTCCATCAACGTCAAACTTACCTCAAAGTCTCCGCGGCTAGTCCCATTGAAATACGATTATCTCACCTTGCAAGAGTGAAAAAATCG"
+    seq4= "CTTCGGTATAGTTCTGCCGAGCTGGTTCGCTACATGATCAATGATTACGACCCTGGGCCCTCTGGCGTATGAGTGGGATGGTGTCAAATTTCTTCTTGACCGGCAGGTCACCTCTTGTCCTGAGGGCCGGGCGGCAGCAGGTCTGTGCTGTTTTGCCTGTAATGCCTCGTCAGGCGGGAGCACGGTTTTAGTATCCTTGCCTACTCTATTATTCTGAAATTTAGCTGATAATCTCTTCAGCTAATTCTTTAGAAATAGGCTTATCGTCCCGGGTTGGTGCGAAACATCCG"
+    
+    aln_path = '/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
+    
+    m1 = matrix(seq1,seq2)
+    p = MPTS(m1) 
+    
+    print(p)
+    
     dat = Nexus.Nexus()
 
     dat.read(aln_path)
@@ -80,39 +134,7 @@ def Alignment(aln_path):
         charset_aln = aln_array[:, sites]
 
         results[name] = MPTS_aln(charset_aln)
-    
-    return results[name]
-    
-def MPTS_aln(charset_aln):
-    # make iterator for all pairs of rows in the numpy array called charset_aln
-
-    # get list of p values where each entry is a p-value for a single pair of rows
-
-    # return that list
-    
-    pvalues={}
-    pvalues.append
-    
-    return pvalues
-
-if __name__ == '__main__': 
-    print("hello")
-    s1 = "AAACTGTTCTACAGGACTGATG"
-    s2 = "CATCTGTAATAGGCCACTGATA"
-    
-    seq1= "TTTCTGTAGACTACAGCCGAACTGATACAATACAAGCACAAACAATTCACCGCGTCGCGCACAGTCGTCAAAGCGGCATTCCATAAAAGTTCATCCATACCCCGAGGTAACCTCACGTCGTCACGGGCTGACGTAATCACGAAAGCACCGCCCGACCGGTCAAGCCTCAGAAGGGTCGAACACGGACTCAGTCTCAAGTGCTCCTCCACAAACGTCATACTTAGTTCACCATCCCCGAGCCTATTTCCCTTAAAATGCGGTAACCCGGCCAGGGAGGAGAGAAAGAGTGG"
-    seq2= "CGTCTGGGATCTTTTGCCGGGCTGGGTCGCTACACGAACGCAGAGTTCTACTCCGGTCGCACTTGCGGATGAGTTGGTTACGGAGAGTGCGGGTCTTTTCCCAAAGTTCATTTCCCGTCGTTTCGGCCTGTTGTAATCATGTGTGCTCCGCCCCATCGGTGAAGCCCCGCTAGCGTATTACTCGGAATGTGTATCTAGTGCCAATTCATATACGTATAAGTTAGTTTATAATCTCCTCGCCTATTTCCTTAGAAATAGTATTATCGATCTTTGACGGAGTGAACTATGGG"
-    seq3= "CTACAGTTAAGTTCTGCAGAGCTGCTTGACTATACGATCAACGAATACAAGACGGGGCGCACAGGCATATAAGTGGGATTCCGTAAGATCATGTCTCTACCCAAAGGGTACATGTTGTCTTCACGGCCAAACCTAATCACGGGTCACCTGCCCAACAGTTGAAGGCGCGCCAGGCCGGCCCACGCATACAGACTCCAGAGCAACTCCATCAACGTCAAACTTACCTCAAAGTCTCCGCGGCTAGTCCCATTGAAATACGATTATCTCACCTTGCAAGAGTGAAAAAATCG"
-    seq4= "CTTCGGTATAGTTCTGCCGAGCTGGTTCGCTACATGATCAATGATTACGACCCTGGGCCCTCTGGCGTATGAGTGGGATGGTGTCAAATTTCTTCTTGACCGGCAGGTCACCTCTTGTCCTGAGGGCCGGGCGGCAGCAGGTCTGTGCTGTTTTGCCTGTAATGCCTCGTCAGGCGGGAGCACGGTTTTAGTATCCTTGCCTACTCTATTATTCTGAAATTTAGCTGATAATCTCTTCAGCTAATTCTTTAGAAATAGGCTTATCGTCCCGGGTTGGTGCGAAACATCCG"
-    
-    m1 = matrix(seq2,seq3)
-    m = np.array([[191, 71, 68, 57],[14, 142, 22, 33],[16, 12, 144, 29],[26, 19, 18, 138]]) 
-    MA = np.array([[248, 1, 1, 1],[1, 251, 1, 1],[1, 1, 252, 1],[1, 1, 1, 249]])
-    #m=np.array([[248,0,0,0],[0,251,0,0],[0,0,252,0],[0,0,0,249]])
-    s = MPTS(m1) 
-    print("HELLO")
-    
-    print(1 - chi2.cdf(s,6.0))
-    
-    aln = Alignment('/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex')
-    #use itertools to loop over all sequences (itertools all pairs)
+        
+    s1 = seq(aln_array[2,sites])
+    s2 = seq(aln_array[3,sites])
+    print(MPTS(matrix(seq(aln_array[2,sites]),seq(aln_array[3,sites]))))
