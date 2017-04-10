@@ -48,8 +48,8 @@ def matrix(s1,s2):
                 m[2,3]=m[2,3]+1
             elif s2[i]=="A":
                 m[0,3]=m[0,3]+1           
-        else:
-            print("error")
+        #else:
+            #print("error")
     return m
 def MPTS(m):
     """ inputs
@@ -62,7 +62,10 @@ def MPTS(m):
         if i<j:
             n = (m[i,j]-m[j,i])**2
             d = m[i,j]+m[j,i]
-            s = s+(float(n)/float(d))
+            if float(d) == 0.:
+                s = 0.
+            else:
+                s = s+(float(n)/float(d))
         p = 1 - chi2.cdf(s,6.0)
     return p
     
@@ -87,9 +90,10 @@ def MPTS_aln(aln):
         # slice the alignment to get the sub-alignment for the CHARSET
         charset_aln = aln_array[:, sites]
     p = [] #empty list of p values
-    for q in ite.combinations(len(aln),2): #iterating over all taxa for sites
-        m = matrix(aln_array[:,dat.charsets[sites]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[sites]][q[1]].tostring().upper().decode())
-        np.appned(p,MPTS(m)) 
+    for q in ite.combinations(list(range(len(aln))),2): #iterating over all taxa for sites
+        m = matrix(aln_array[:,dat.charsets['COI_3rdpos']][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets['COI_3rdpos']][q[1]].tostring().upper().decode())
+        
+        np.append(p,MPTS(m)) 
     
     return p  
 
@@ -101,10 +105,5 @@ if __name__ == '__main__':
     dat.read(aln_path)
 
     aln = AlignIO.read(open(aln_path), "nexus")
-
-    
-        
-    s0 = aln_array[:,dat.charsets['COI_3rdpos']][0].tostring().upper().decode()
-    s1 = aln_array[:,dat.charsets['COI_3rdpos']][1].tostring().upper().decode()
-    print(MPTS(matrix(s0,s1)))
-    print('end')
+    p = MPTS_aln(aln)
+    print(p)
