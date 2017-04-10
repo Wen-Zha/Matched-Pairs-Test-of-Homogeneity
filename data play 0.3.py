@@ -79,29 +79,12 @@ def MPTS_aln(charset_aln):
     # get list of p values where each entry is a p-value for a single pair of rows
 
     # return that list
-    m = matrix(aln_array[:,sites],aln_array[:,sites])
-    p = MPTS(m)
+    p= []
+    for q in ite.combinations(len(aln),2) #just need to read in aln and get charset_aln to make work
+    m = matrix(aln_array[:,dat.charsets[sites]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[sites]][q[1]].tostring().upper().decode())
+    np.appned(p,MPTS(m)) 
     
-    return p
-
-def seq(s):
-    string = ""
-    for i in s:
-        if i == b'A':
-            string += "A"#np.array2string(s[i])
-        elif i == b'T':
-            string += "T"#np.array2string(s[i])
-        elif i == b'C':
-            string += "C"#np.array2string(s[i])
-        elif i == b'G':
-            string += "G"#np.array2string(s[i])
-        elif i == b'-':
-            string += "-"#np.array2string(s[i])
-        elif i == b'?':
-            string += "-"#np.array2string(s[i])
-    #print(string)
-    return string
-    
+    return p  
 
 if __name__ == '__main__': 
     seq1= "TTTCTGTAGACTACAGCCGAACTGATACAATACAAGCACAAACAATTCACCGCGTCGCGCACAGTCGTCAAAGCGGCATTCCATAAAAGTTCATCCATACCCCGAGGTAACCTCACGTCGTCACGGGCTGACGTAATCACGAAAGCACCGCCCGACCGGTCAAGCCTCAGAAGGGTCGAACACGGACTCAGTCTCAAGTGCTCCTCCACAAACGTCATACTTAGTTCACCATCCCCGAGCCTATTTCCCTTAAAATGCGGTAACCCGGCCAGGGAGGAGAGAAAGAGTGG"
@@ -135,6 +118,7 @@ if __name__ == '__main__':
 
         results[name] = MPTS_aln(charset_aln)
         
-    s1 = seq(aln_array[2,sites])
-    s2 = seq(aln_array[3,sites])
-    print(MPTS(matrix(seq(aln_array[2,sites]),seq(aln_array[3,sites]))))
+    s0 = aln_array[:,dat.charsets['COI_3rdpos']][0].tostring().upper().decode()
+    s1 = aln_array[:,dat.charsets['COI_3rdpos']][1].tostring().upper().decode()
+    print(MPTS(matrix(s0,s1)))
+    print('end')
