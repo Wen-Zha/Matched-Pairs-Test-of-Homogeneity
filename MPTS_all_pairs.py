@@ -9,8 +9,13 @@ from Bio import AlignIO
 def matrix(s1,s2):
     m= np.zeros((4,4))
     for i in range(len(s1)):
+        #empty cases
+        if s1[i] == "?":
+            m = m
+        elif s2[i] == "?":
+            m = m
         #cases of A->A
-        if s1[i]==s2[i]:
+        elif s1[i]==s2[i]:
             if s1[i]=="A":
                 m[0,0]=m[0,0]+1
             elif s1[i]=="C":
@@ -48,8 +53,8 @@ def matrix(s1,s2):
                 m[2,3]=m[2,3]+1
             elif s2[i]=="A":
                 m[0,3]=m[0,3]+1           
-        #else:
-            #print("error")
+        else:
+            print(s1[i],s2[i],"error in matrix")
     return m
 def MPTS(m):
     """ inputs
@@ -93,7 +98,7 @@ def MPTS_aln(aln):
     for q in ite.combinations(list(range(len(aln))),2): #iterating over all taxa for sites
         m = matrix(aln_array[:,dat.charsets['COI_3rdpos']][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets['COI_3rdpos']][q[1]].tostring().upper().decode())
         
-        np.append(p,MPTS(m)) 
+        p.append(MPTS(m)) 
     
     return p  
 
@@ -107,3 +112,4 @@ if __name__ == '__main__':
     aln = AlignIO.read(open(aln_path), "nexus")
     p = MPTS_aln(aln)
     print(p)
+    print(len(p))
