@@ -67,11 +67,12 @@ def MPTS(m):
         if i<j:
             n = (m[i,j]-m[j,i])**2
             d = m[i,j]+m[j,i]
-            if float(d) == 0.:
-                s = 0.
+            if float(d) != 0.:
+                s = s+(float(n)/float(d)) 
+                p = 1 - chi2.cdf(s,6.0)
             else:
-                s = s+(float(n)/float(d))
-        p = 1 - chi2.cdf(s,6.0)
+                p = 'N/A' #note p gets overridden later so better to find a fix here.
+
     return p
     
 def MPTS_aln(aln):
