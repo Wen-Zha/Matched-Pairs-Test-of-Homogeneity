@@ -96,17 +96,17 @@ def MPTS_aln(aln):
     aln_array = np.array([list(rec) for rec in aln], np.character)
 
     dat.charsets.keys() #these are the names to the CHARSETS in the .nex file, which you can iterate over in a for loop
-    for name in dat.charsets:
-        sites = dat.charsets[name]
+    #for name in dat.charsets:
+        #sites = dat.charsets[name]
         # slice the alignment to get the sub-alignment for the CHARSET
-        charset_aln = aln_array[:, sites]
-    p = [] #empty list of p values
+        #charset_aln = aln_array[:, sites]
+    p=[]
+    i = 0
     for n in dat.charsets.keys():
         for q in ite.combinations(list(range(len(aln))),2): #iterating over all taxa for sites
             m, elog = matrix(aln_array[:,dat.charsets[n]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[n]][q[1]].tostring().upper().decode())
-        
             p.append([n,q,MPTS(m)]) 
-    
+        i = i+1
     return p, elog  
 
 if __name__ == '__main__': 
