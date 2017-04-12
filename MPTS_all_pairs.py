@@ -8,11 +8,16 @@ from Bio import AlignIO
 
 def matrix(s1,s2):
     m= np.zeros((4,4))
+    elog = [] #error log
     for i in range(len(s1)):
         #empty cases
         if s1[i] == "?":
             m = m
         elif s2[i] == "?":
+            m = m
+        elif s1[i] == "-":
+            m = m
+        elif s2[i] == "-":
             m = m
         #cases of A->A
         elif s1[i]==s2[i]:
@@ -54,8 +59,8 @@ def matrix(s1,s2):
             elif s2[i]=="A":
                 m[0,3]=m[0,3]+1           
         else:
-            print(s1[i],s2[i],"error in matrix")
-    return m
+            elog.append([s1[i],s2[i],"error in matrix"])
+    return m, elog
 def MPTS(m):
     """ inputs
             m: a 4x4 matrix of proportions
@@ -71,7 +76,7 @@ def MPTS(m):
                 s = s+(float(n)/float(d)) 
                 p = 1 - chi2.cdf(s,6.0)
             else:
-                p = 'N/A' #note p gets overridden later so better to find a fix here.
+                p = 'NA' #note p gets overridden later so better to find a fix here.
 
     return p
     
@@ -79,7 +84,7 @@ def MPTS_aln(aln):
     """inputs 
             charset_aln = alignment array of sites
         output
-            pval = dictionary of pvalues with corresponding charset pair
+            p = array of pvalues with corresponding charset pair, (0,1),(0,2),...,(0,43),(1,2)...
     
     """
     #use itertools to loop over all sequences (itertools all pairs)
@@ -91,17 +96,18 @@ def MPTS_aln(aln):
     aln_array = np.array([list(rec) for rec in aln], np.character)
 
     dat.charsets.keys() #these are the names to the CHARSETS in the .nex file, which you can iterate over in a for loop
-    for name in dat.charsets:
-        sites = dat.charsets[name]
+    #for name in dat.charsets:
+        #sites = dat.charsets[name]
         # slice the alignment to get the sub-alignment for the CHARSET
-        charset_aln = aln_array[:, sites]
-    p = [] #empty list of p values
-    for q in ite.combinations(list(range(len(aln))),2): #iterating over all taxa for sites
-        m = matrix(aln_array[:,dat.charsets['COI_3rdpos']][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets['COI_3rdpos']][q[1]].tostring().upper().decode())
-        
-        p.append(MPTS(m)) 
-    
-    return p  
+        #charset_aln = aln_array[:, sites]
+    p=[]
+    i = 0
+    for n in dat.charsets.keys():
+        for q in ite.combinations(list(range(len(aln))),2): #iterating over all taxa for sites
+            m, elog = matrix(aln_array[:,dat.charsets[n]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[n]][q[1]].tostring().upper().decode())
+            p.append([n,q,MPTS(m)]) 
+        i = i+1
+    return p, elog  
 
 if __name__ == '__main__': 
     aln_path = '/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
@@ -111,6 +117,6 @@ if __name__ == '__main__':
     dat.read(aln_path)
 
     aln = AlignIO.read(open(aln_path), "nexus")
-    p = MPTS_aln(aln)
+    p, elog = MPTS_aln(aln)
     print(p)
     print(len(p))
