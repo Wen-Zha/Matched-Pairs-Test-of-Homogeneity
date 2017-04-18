@@ -77,38 +77,27 @@ def MPTS(m):
                 s = s+(float(n)/float(d)) 
                 p = 1 - chi2.cdf(s,6.0)
             else:
-                p = 'NA' #note p gets overridden later so better to find a fix here.
+                p = 'NA'
 
     return p
     
-def MPTS_aln(aln):
+def Test_aln(aln):
     """inputs 
             charset_aln = alignment array of sites
         output
             p = array of pvalues with corresponding charset pair, (0,1),(0,2),...,(0,43),(1,2)...
     
     """
-    #use itertools to loop over all sequences (itertools all pairs)
-    # make iterator for all pairs of rows in the numpy array called charset_aln
-
-    # get list of p values where each entry is a p-value for a single pair of rows
-
-    # return that list
     aln_array = np.array([list(rec) for rec in aln], np.character)
-
     dat.charsets.keys() #these are the names to the CHARSETS in the .nex file, which you can iterate over in a for loop
-    #for name in dat.charsets:
-        #sites = dat.charsets[name]
-        # slice the alignment to get the sub-alignment for the CHARSET
-        #charset_aln = aln_array[:, sites]
-    P = pd.
     i = 0
+    p = np.array(['Dataset','Charset','Test','Sp1','Sp2','p-value'],dtype='U14')
     for n in dat.charsets.keys():
         for q in ite.combinations(list(range(len(aln))),2): #iterating over all taxa for sites
             m, elog = matrix(aln_array[:,dat.charsets[n]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[n]][q[1]].tostring().upper().decode())
-            p.append([n,q,MPTS(m)]) 
+            p=np.vstack([p,['Dataset',n,'MPTS',q[0],q[1],MPTS(m)]]) 
         i = i+1
-    return p, elog  
+    return p  
 
 if __name__ == '__main__': 
     aln_path = input('input nex file here:')#'/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
@@ -118,6 +107,5 @@ if __name__ == '__main__':
     dat.read(aln_path)
 
     aln = AlignIO.read(open(aln_path), "nexus")
-    p, elog = MPTS_aln(aln)
+    p = Test_aln(aln)
     print(p)
-    print(len(p))
