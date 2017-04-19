@@ -4,6 +4,7 @@ from scipy.stats import chi2
 from Bio.Nexus import Nexus
 from Bio import AlignIO
 import pandas as pd
+from pathlib import Path
 
 #import scipy.stats as sp
 
@@ -85,9 +86,10 @@ def Test_aln(aln):
     """inputs 
             charset_aln = alignment array of sites
         output
-            p = array of pvalues with corresponding charset pair, (0,1),(0,2),...,(0,43),(1,2)...
+            p = array containing pvalues
     
     """
+    
     aln_array = np.array([list(rec) for rec in aln], np.character)
     dat.charsets.keys() #these are the names to the CHARSETS in the .nex file, which you can iterate over in a for loop
     i = 0
@@ -95,7 +97,7 @@ def Test_aln(aln):
     for n in dat.charsets.keys():
         for q in ite.combinations(list(range(len(aln))),2): #iterating over all taxa for sites
             m, elog = matrix(aln_array[:,dat.charsets[n]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[n]][q[1]].tostring().upper().decode())
-            p=np.vstack([p,['Dataset',n,'MPTS',q[0],q[1],MPTS(m)]]) 
+            p=np.vstack([p,['Dataset',n,'MPTS',aln[q[0]].name,aln[q[1]].name,MPTS(m)]]) 
         i = i+1
     return p  
 
@@ -105,7 +107,10 @@ if __name__ == '__main__':
     dat = Nexus.Nexus()
 
     dat.read(aln_path)
-
+    
     aln = AlignIO.read(open(aln_path), "nexus")
+    
     p = Test_aln(aln)
-    print(p)
+    df = pd.DataFrame(p)
+    df.to_csv("data.csv")
+    print('process complete with no errors')
