@@ -82,7 +82,7 @@ def MPTS(m):
 
     return p
     
-def Test_aln(aln):
+def Test_aln(aln,dset):
     """inputs 
             charset_aln = alignment array of sites
         output
@@ -97,20 +97,20 @@ def Test_aln(aln):
     for n in dat.charsets.keys():
         for q in ite.combinations(list(range(len(aln))),2): #iterating over all taxa for sites
             m, elog = matrix(aln_array[:,dat.charsets[n]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[n]][q[1]].tostring().upper().decode())
-            p=np.vstack([p,['Dataset',n,'MPTS',aln[q[0]].name,aln[q[1]].name,MPTS(m)]]) 
+            p=np.vstack([p,[dset,n,'MPTS',aln[q[0]].name,aln[q[1]].name,MPTS(m)]]) 
         i = i+1
     return p  
 
 if __name__ == '__main__': 
     aln_path = input('input nex file here:')#'/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
-    
+    dset=Path(aln_path).parts[-2]
     dat = Nexus.Nexus()
 
     dat.read(aln_path)
     
     aln = AlignIO.read(open(aln_path), "nexus")
     
-    p = Test_aln(aln)
+    p = Test_aln(aln,dset)
     df = pd.DataFrame(p)
     df.to_csv("data.csv")
     print('process complete with no errors')
