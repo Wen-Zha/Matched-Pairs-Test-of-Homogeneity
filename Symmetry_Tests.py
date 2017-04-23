@@ -168,11 +168,11 @@ def Test_aln2(aln,dset):
     for n in dat.charsets.keys():
         for q in ite.combinations(list(range(len(aln))),2): #iterating over all taxa for sites
             m = simMtx('ACGT',aln_array[:,dat.charsets[n]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[n]][q[1]].tostring().upper().decode())
-            if isinstance(chi2.cdf(altMPTS(m),6),float)==True:
-                q=1.+float(chi2.cdf(altMPTS(m),6))
+            if isinstance(altMPTS(m),float)==True:
+                pval=1.+float(chi2.cdf(altMPTS(m),6))
             else:
-                q='NA'
-            p=np.vstack([p,[dset,n,'MPTS',aln[q[0]].name,aln[q[1]].name, q]])
+                pval='NA'
+            p=np.vstack([p,[dset,n,'MPTS',aln[q[0]].name,aln[q[1]].name, pval]])
             p=np.vstack([p,[dset,n,'MPTMS',aln[q[0]].name,aln[q[1]].name,MPTMS(m)]])
         i = i+1
     return p
@@ -187,7 +187,7 @@ if __name__ == '__main__':
     
     aln = AlignIO.read(open(aln_path), "nexus")
     
-    p = Test_aln(aln,dset)
+    p = Test_aln2(aln,dset)
     df = pd.DataFrame(p)
     df.to_csv("dataALT.csv")
     print('process complete with no errors in', (time.time() - start_time))
