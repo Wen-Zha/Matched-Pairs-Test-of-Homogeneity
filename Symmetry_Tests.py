@@ -10,6 +10,14 @@ import time #only using time for timing/troubleshooting
 
 #import scipy.stats as sp
 
+def simMtx(a, x, y):
+    a = np.array(list(a))
+    x = np.array(list(x))
+    y = np.array(list(y))
+    ax = (x[:, None] == a[None, :]).astype(int)
+    ay = (y[:, None] == a[None, :]).astype(int)
+    return np.dot(ay.T, ax)
+
 def matrix(s1,s2):
     m= np.zeros((4,4))
     elog = [] #error log
@@ -66,6 +74,16 @@ def matrix(s1,s2):
             elog.append([s1[i],s2[i],"error in matrix"])
     return m, elog
 
+def altMPTS(m):
+    d=(m+m.T)
+    off_diag_indices=np.triu_indices(len(d),1)
+    if 0 in d[off_diag_indices]:
+        return 'NA'
+    else:
+        numerator=(m-m.T)**2
+        denominator=m+m.T
+        return np.sum(numerator[off_diag_indices]/denominator[off_diag_indices])
+
 def MPTS(m):
     """ inputs
             m: a 4x4 matrix of proportions
@@ -82,6 +100,7 @@ def MPTS(m):
                 p = 1 - chi2.cdf(s,6.0)
             else:
                 p = 'NA'
+                break
 
     return p
 
@@ -134,6 +153,30 @@ def Test_aln(aln,dset):
         i = i+1
     return p
 
+def Test_aln2(aln,dset):
+    """inputs 
+            charset_aln = alignment array of sites
+        output
+            p = array containing pvalues
+    
+    """
+    
+    aln_array = np.array([list(rec) for rec in aln], np.character)
+    dat.charsets.keys() #these are the names to the CHARSETS in the .nex file, which you can iterate over in a for loop
+    i = 0
+    p = np.array(['Dataset','Charset','Test','Sp1','Sp2','p-value'],dtype='U14')
+    for n in dat.charsets.keys():
+        for q in ite.combinations(list(range(len(aln))),2): #iterating over all taxa for sites
+            m = simMtx('ACGT',aln_array[:,dat.charsets[n]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[n]][q[1]].tostring().upper().decode())
+            if isinstance(chi2.cdf(altMPTS(m),6),float)==True:
+                q=1.+float(chi2.cdf(altMPTS(m),6))
+            else:
+                q='NA'
+            p=np.vstack([p,[dset,n,'MPTS',aln[q[0]].name,aln[q[1]].name, q]])
+            p=np.vstack([p,[dset,n,'MPTMS',aln[q[0]].name,aln[q[1]].name,MPTMS(m)]])
+        i = i+1
+    return p
+
 if __name__ == '__main__': 
     aln_path = input('input nex file here:')#'/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
     start_time = time.time()
@@ -146,5 +189,5 @@ if __name__ == '__main__':
     
     p = Test_aln(aln,dset)
     df = pd.DataFrame(p)
-    df.to_csv("data.csv")
+    df.to_csv("dataALT.csv")
     print('process complete with no errors in', (time.time() - start_time))
