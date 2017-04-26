@@ -18,62 +18,6 @@ def simMtx(a, x, y):
     ay = (y[:, None] == a[None, :]).astype(int)
     return np.dot(ay.T, ax)
 
-def matrix(s1,s2):
-    m= np.zeros((4,4))
-    elog = [] #error log
-    for i in range(len(s1)):
-        #empty cases
-        if s1[i] == "?":
-            m = m
-        elif s2[i] == "?":
-            m = m
-        elif s1[i] == "-":
-            m = m
-        elif s2[i] == "-":
-            m = m
-        #cases of A->A
-        elif s1[i]==s2[i]:
-            if s1[i]=="A":
-                m[0,0]=m[0,0]+1
-            elif s1[i]=="C":
-                m[1,1]=m[1,1]+1
-            elif s1[i]=="G":
-                m[2,2]=m[2,2]+1
-            elif s1[i]=="T":
-                m[3,3]=m[3,3]+1
-        #other cases
-        elif s1[i]=="A":
-            if s2[i]=="C":
-                m[1,0]=m[1,0]+1
-            elif s2[i]=="G":
-                m[2,0]=m[2,0]+1
-            elif s2[i]=="T":
-                m[3,0]=m[3,0]+1
-        elif s1[i]=="C":
-            if s2[i]=="A":
-                m[0,1]=m[0,1]+1
-            elif s2[i]=="G":
-                m[2,1]=m[2,1]+1
-            elif s2[i]=="T":
-                m[3,1]=m[3,1]+1
-        elif s1[i]=="G":
-            if s2[i]=="A":
-                m[0,2]=m[0,2]+1
-            elif s2[i]=="C":
-                m[1,2]=m[1,2]+1
-            elif s2[i]=="T":
-                m[3,2]=m[3,2]+1
-        elif s1[i]=="T":
-            if s2[i]=="C":
-                m[1,3]=m[1,3]+1
-            elif s2[i]=="G":
-                m[2,3]=m[2,3]+1
-            elif s2[i]=="A":
-                m[0,3]=m[0,3]+1           
-        else:
-            elog.append([s1[i],s2[i],"error in matrix"])
-    return m, elog
-
 def altMPTS(m):
     d=(m+m.T)
     off_diag_indices=np.triu_indices(len(d),1)
@@ -83,24 +27,6 @@ def altMPTS(m):
         numerator=(m-m.T)**2
         denominator=m+m.T
         return np.sum(numerator[off_diag_indices]/denominator[off_diag_indices])
-
-def MPTS(m):
-    """ inputs
-            m: a 4x4 matrix of proportions
-        outputs
-            p: is a p-value for the matched pairs test of symmetry
-    """
-    s = 0.0
-    for (i,j) in ite.product(range(0,4),range(0,4)):
-        if i<j:
-            n = (m[i,j]-m[j,i])**2
-            d = m[i,j]+m[j,i]
-            if float(d) != 0.:
-                s = s+(float(n)/float(d)) 
-                p = 1 - chi2.cdf(s,6.0)
-            else:
-                p = 'NA'
-                break
 
     return p
 
@@ -125,35 +51,21 @@ def MPTMS(m):
         elif i!=j:
             V[i,j]=-(m[i,j]+m[j,i])
     if sp.linalg.det(V) == 0:
-        p='NA'
+        s='NA'
     else:
         Vi=np.linalg.inv(V)
         s = (ut.dot(Vi)).dot(u)[0][0]
-        #print(s)
-        p = 1 - chi2.cdf(s,3.0)
-    return p
-    
-def Test_aln(aln,dset):
-    """inputs 
-            charset_aln = alignment array of sites
-        output
-            p = array containing pvalues
-    
-    """
-    
-    aln_array = np.array([list(rec) for rec in aln], np.character)
-    dat.charsets.keys() #these are the names to the CHARSETS in the .nex file, which you can iterate over in a for loop
-    i = 0
-    p = np.array(['Dataset','Charset','Test','Sp1','Sp2','p-value'],dtype='U14')
-    for n in dat.charsets.keys():
-        for q in ite.combinations(list(range(len(aln))),2): #iterating over all taxa for sites
-            m, elog = matrix(aln_array[:,dat.charsets[n]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[n]][q[1]].tostring().upper().decode())
-            p=np.vstack([p,[dset,n,'MPTS',aln[q[0]].name,aln[q[1]].name,MPTS(m)]])
-            p=np.vstack([p,[dset,n,'MPTMS',aln[q[0]].name,aln[q[1]].name,MPTMS(m)]])
-        i = i+1
+    return s
+
+def MPTIS(MPTSs,MPTMSs):
+    if isinstance(MPTSs,float) and isinstance(MPTMSs,float)==True:
+            s = MPTSs-MPTMSs
+            p = 1 - chi2.cdf(s,3.0)
+    else:
+        p='NA'
     return p
 
-def Test_aln2(aln,dset):
+def Test_aln(aln,dset):
     """inputs 
             charset_aln = alignment array of sites
         output
@@ -169,11 +81,16 @@ def Test_aln2(aln,dset):
         for q in ite.combinations(list(range(len(aln))),2): #iterating over all taxa for sites
             m = simMtx('ACGT',aln_array[:,dat.charsets[n]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[n]][q[1]].tostring().upper().decode())
             if isinstance(altMPTS(m),float)==True:
-                pval=1.+float(chi2.cdf(altMPTS(m),6))
+                MPTSpval=1.-float(chi2.cdf(altMPTS(m),6))
             else:
-                pval='NA'
-            p=np.vstack([p,[dset,n,'MPTS',aln[q[0]].name,aln[q[1]].name, pval]])
-            p=np.vstack([p,[dset,n,'MPTMS',aln[q[0]].name,aln[q[1]].name,MPTMS(m)]])
+                MPTSpval='NA'
+            if isinstance(MPTMS(m),float)==True:
+                MPTMSpval = 1 - chi2.cdf(MPTMS(m),3.0)
+            else:
+                MPTMSpval='NA'
+            p=np.vstack([p,[dset,n,'MPTS',aln[q[0]].name,aln[q[1]].name, MPTSpval]])
+            p=np.vstack([p,[dset,n,'MPTMS',aln[q[0]].name,aln[q[1]].name,MPTMSpval]])
+            p=np.vstack([p,[dset,n,'MPTIS',aln[q[0]].name,aln[q[1]].name,MPTIS(altMPTS(m),MPTMS(m))]])
         i = i+1
     return p
 
@@ -187,7 +104,7 @@ if __name__ == '__main__':
     
     aln = AlignIO.read(open(aln_path), "nexus")
     
-    p = Test_aln2(aln,dset)
+    p = Test_aln(aln,dset)
     df = pd.DataFrame(p)
     df.to_csv("dataALT.csv")
     print('process complete with no errors in', (time.time() - start_time))
