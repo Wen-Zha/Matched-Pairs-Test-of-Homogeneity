@@ -65,18 +65,18 @@ def MPTIS(MPTSs,MPTMSs):
         p='NA'
     return p
 
-def Test_aln(aln,dset):
+def Test_aln(aln,dset,dat,outf):
     """inputs 
             charset_aln = alignment array of sites
         output
             p = array containing pvalues
     
     """
-    
     aln_array = np.array([list(rec) for rec in aln], np.character)
     dat.charsets.keys() #these are the names to the CHARSETS in the .nex file, which you can iterate over in a for loop
     i = 0
     p = np.array(['Dataset','Charset','Test','Sp1','Sp2','p-value'],dtype='U14')
+    np.savetxt(outf, p.reshape(1, p.shape[0]), delimiter=',', fmt='%s')
     for n in dat.charsets.keys():
         for q in ite.combinations(list(range(len(aln))),2): #iterating over all taxa for sites
             m = simMtx('ACGT',aln_array[:,dat.charsets[n]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[n]][q[1]].tostring().upper().decode())
@@ -88,14 +88,18 @@ def Test_aln(aln,dset):
                 MPTMSpval = 1 - chi2.cdf(MPTMS(m),3.0)
             else:
                 MPTMSpval='NA'
-            p=np.vstack([p,[dset,n,'MPTS',aln[q[0]].name,aln[q[1]].name, MPTSpval]])
-            p=np.vstack([p,[dset,n,'MPTMS',aln[q[0]].name,aln[q[1]].name,MPTMSpval]])
-            p=np.vstack([p,[dset,n,'MPTIS',aln[q[0]].name,aln[q[1]].name,MPTIS(altMPTS(m),MPTMS(m))]])
+            p=np.array([dset,n,'MPTS',aln[q[0]].name,aln[q[1]].name, MPTSpval])
+            np.savetxt(outf, p.reshape(1, p.shape[0]), delimiter=',', fmt='%s')
+            p=np.array([dset,n,'MPTMS',aln[q[0]].name,aln[q[1]].name,MPTMSpval])
+            np.savetxt(outf, p.reshape(1, p.shape[0]), delimiter=',', fmt='%s')
+            p=np.array([dset,n,'MPTIS',aln[q[0]].name,aln[q[1]].name,MPTIS(altMPTS(m),MPTMS(m))])
+            np.savetxt(outf, p.reshape(1, p.shape[0]), delimiter=',', fmt='%s')
         i = i+1
-    return p
+    return
 
 if __name__ == '__main__': 
-    aln_path = input('input nex file here:')#'/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
+    aln_path = '/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
+    #input('input nex file here:')#'/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
     start_time = time.time()
     dset=Path(aln_path).parts[-2]
     dat = Nexus.Nexus()
@@ -103,8 +107,8 @@ if __name__ == '__main__':
     dat.read(aln_path)
     
     aln = AlignIO.read(open(aln_path), "nexus")
-    
-    p = Test_aln(aln,dset)
-    df = pd.DataFrame(p)
-    df.to_csv("dataALT.csv")
+    outf = open('results.txt')
+    Test_aln(aln,dset,dat, outf)
+    #df = pd.DataFrame(p)
+    #df.to_csv("dataALT.csv")
     print('process complete with no errors in', (time.time() - start_time))
