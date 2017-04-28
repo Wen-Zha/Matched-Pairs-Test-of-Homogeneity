@@ -6,9 +6,17 @@ from Bio.Nexus import Nexus
 from Bio import AlignIO
 import pandas as pd
 from pathlib import Path
+import math
 import time #only using time for timing/troubleshooting
 
 #import scipy.stats as sp
+def nCr(n,r):
+    '''Factorial function by Mark Tolonen
+    From: http://stackoverflow.com/questions/4941753/is-there-a-math-ncr-function-in-python
+    
+    '''
+    f = math.factorial
+    return f(n) // f(r) // f(n-r)
 
 def simMtx(a, x, y):
     a = np.array(list(a))
@@ -65,7 +73,7 @@ def MPTIS(MPTSs,MPTMSs):
         p='NA'
     return p
 
-def Test_aln(aln,dset,dat,outf):
+def Test_aln(aln,dset,dat):
     """inputs 
             charset_aln = alignment array of sites
         output
@@ -74,9 +82,11 @@ def Test_aln(aln,dset,dat,outf):
     """
     aln_array = np.array([list(rec) for rec in aln], np.character)
     dat.charsets.keys() #these are the names to the CHARSETS in the .nex file, which you can iterate over in a for loop
-    i = 0
-    p = np.array(['Dataset','Charset','Test','Sp1','Sp2','p-value'],dtype='U14')
-    np.savetxt(outf, p.reshape(1, p.shape[0]), delimiter=',', fmt='%s')
+    i = 1
+    #no = 946 (44 choose 2)* 3(no. tests) * 9 (no. of charsets)+1 for indexing
+    no = nCr(len(aln),2)*3*len([len(v) for v in dat.charsets.keys()])+1
+    p=np.empty([no,6],dtype='U14')
+    p[0] = np.array(['Dataset','Charset','Test','Sp1','Sp2','p-value'],dtype='U14')
     for n in dat.charsets.keys():
         for q in ite.combinations(list(range(len(aln))),2): #iterating over all taxa for sites
             m = simMtx('ACGT',aln_array[:,dat.charsets[n]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[n]][q[1]].tostring().upper().decode())
@@ -88,14 +98,13 @@ def Test_aln(aln,dset,dat,outf):
                 MPTMSpval = 1 - chi2.cdf(MPTMS(m),3.0)
             else:
                 MPTMSpval='NA'
-            p=np.array([dset,n,'MPTS',aln[q[0]].name,aln[q[1]].name, MPTSpval])
-            np.savetxt(outf, p.reshape(1, p.shape[0]), delimiter=',', fmt='%s')
-            p=np.array([dset,n,'MPTMS',aln[q[0]].name,aln[q[1]].name,MPTMSpval])
-            np.savetxt(outf, p.reshape(1, p.shape[0]), delimiter=',', fmt='%s')
-            p=np.array([dset,n,'MPTIS',aln[q[0]].name,aln[q[1]].name,MPTIS(altMPTS(m),MPTMS(m))])
-            np.savetxt(outf, p.reshape(1, p.shape[0]), delimiter=',', fmt='%s')
-        i = i+1
-    return
+            p[i]=np.array([dset,n,'MPTS',aln[q[0]].name,aln[q[1]].name, MPTSpval])
+            i = i+1
+            p[i]=np.array([dset,n,'MPTMS',aln[q[0]].name,aln[q[1]].name,MPTMSpval])
+            i = i+1
+            p[i]=np.array([dset,n,'MPTIS',aln[q[0]].name,aln[q[1]].name,MPTIS(altMPTS(m),MPTMS(m))])
+            i = i+1
+    return p
 
 if __name__ == '__main__': 
     aln_path = '/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
@@ -107,8 +116,7 @@ if __name__ == '__main__':
     dat.read(aln_path)
     
     aln = AlignIO.read(open(aln_path), "nexus")
-    outf = open('results.txt')
-    Test_aln(aln,dset,dat, outf)
-    #df = pd.DataFrame(p)
-    #df.to_csv("dataALT.csv")
+    p = Test_aln(aln,dset,dat)
+    df = pd.DataFrame(p)
+    df.to_csv("dataALT.csv")
     print('process complete with no errors in', (time.time() - start_time))
