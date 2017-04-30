@@ -30,7 +30,7 @@ def altMPTS(m):
     d=(m+m.T)
     off_diag_indices=np.triu_indices(len(d),1)
     if 0 in d[off_diag_indices]:
-        return 'NA'
+        return float('NaN')
     else:
         numerator=(m-m.T)**2
         denominator=m+m.T
@@ -59,7 +59,7 @@ def MPTMS(m):
         elif i!=j:
             V[i,j]=-(m[i,j]+m[j,i])
     if sp.linalg.det(V) == 0:
-        s='NA'
+        s=float('NaN')
     else:
         Vi=np.linalg.inv(V)
         s = (ut.dot(Vi)).dot(u)[0][0]
@@ -70,11 +70,21 @@ def MPTIS(MPTSs,MPTMSs):
             s = MPTSs-MPTMSs
             p = 1 - chi2.cdf(s,3.0)
     else:
-        p='NA'
+        p=float('NaN')
     return p
 
 def Test_aln(aln,dset,dat):
-    """inputs 
+    """
+    needs packages:
+    import numpy as np
+    import itertools as ite
+    from scipy.stats import chi2
+    import scipy as sp
+    from Bio.Nexus import Nexus
+    from Bio import AlignIO
+    from pathlib import Path
+    import math    
+        inputs 
             charset_aln = alignment array of sites
         output
             p = array containing pvalues
@@ -86,18 +96,18 @@ def Test_aln(aln,dset,dat):
     #no = 946 (44 choose 2)* 3(no. tests) * 9 (no. of charsets)+1 for indexing
     no = nCr(len(aln),2)*3*len([len(v) for v in dat.charsets.keys()])+1
     p=np.empty([no,6],dtype='U14')
-    p[0] = np.array(['Dataset','Charset','Test','Sp1','Sp2','p-value'],dtype='U14')
+    p[0] = np.array(['Dataset','Charset','Test','Sp1','Sp2','p-value'])
     for n in dat.charsets.keys():
         for q in ite.combinations(list(range(len(aln))),2): #iterating over all taxa for sites
             m = simMtx('ACGT',aln_array[:,dat.charsets[n]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[n]][q[1]].tostring().upper().decode())
-            if isinstance(altMPTS(m),float)==True:
+            if altMPTS(m)!=float('NaN'):
                 MPTSpval=1.-float(chi2.cdf(altMPTS(m),6))
             else:
-                MPTSpval='NA'
-            if isinstance(MPTMS(m),float)==True:
+                MPTSpval=float('NaN')
+            if MPTMS(m)!=float('NaN'):
                 MPTMSpval = 1 - chi2.cdf(MPTMS(m),3.0)
             else:
-                MPTMSpval='NA'
+                MPTMSpval=float('NaN')
             p[i]=np.array([dset,n,'MPTS',aln[q[0]].name,aln[q[1]].name, MPTSpval])
             i = i+1
             p[i]=np.array([dset,n,'MPTMS',aln[q[0]].name,aln[q[1]].name,MPTMSpval])
@@ -105,6 +115,13 @@ def Test_aln(aln,dset,dat):
             p[i]=np.array([dset,n,'MPTIS',aln[q[0]].name,aln[q[1]].name,MPTIS(altMPTS(m),MPTMS(m))])
             i = i+1
     return p
+def plot(p):
+    '''
+    inputs: p
+    outputs: plot of pvalues for each test (hopefully)
+    '''
+    p[1:,5]
+    return
 
 if __name__ == '__main__': 
     aln_path = '/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
@@ -117,6 +134,6 @@ if __name__ == '__main__':
     
     aln = AlignIO.read(open(aln_path), "nexus")
     p = Test_aln(aln,dset,dat)
-    df = pd.DataFrame(p)
-    df.to_csv("dataALT.csv")
+    #df = pd.DataFrame(p)
+    #df.to_csv("dataALT.csv")
     print('process complete with no errors in', (time.time() - start_time))
