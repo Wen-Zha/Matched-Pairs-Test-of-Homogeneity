@@ -136,7 +136,7 @@ def plot(p):
     inputs: p
     outputs: plot of pvalues for each test (hopefully)
     '''
-    p[1:,5]
+    p[1:,5::3].astype('float64')
     return
 
 if __name__ == '__main__': 
@@ -150,6 +150,7 @@ if __name__ == '__main__':
     
     aln = AlignIO.read(open(aln_path), "nexus")
     p = Test_aln(aln,dset,dat)
-    df = pd.DataFrame(p)
-    df.to_csv("data1.csv")
+    df =pd.DataFrame(p[1:], columns=p[0])
+    #df = pd.DataFrame(p)
+    df.to_csv("dataALT.csv")
     print('process complete with no errors in', (time.time() - start_time))
