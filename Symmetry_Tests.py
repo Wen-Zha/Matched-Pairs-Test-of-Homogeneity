@@ -1,6 +1,7 @@
 import numpy as np
 import itertools as ite
 from scipy.stats import chi2
+from scipy.stats import binom_test
 import scipy as sp
 from Bio.Nexus import Nexus
 from Bio import AlignIO
@@ -138,10 +139,47 @@ def plot(p):
     '''
     p[1:,5::3].astype('float64')
     return
-
+def table(p):
+    '''
+    inputs: matrix of pvalues from Test_aln
+    outputs: a summary table
+    note: returns 'invalid value encountered in greater_equal' for 'nan' values but this does not affect the summary
+    '''
+    T=np.empty([len(dat.charsets.keys())*3+1,6], dtype='<U21')
+    T[0]= np.array(['Charset','Test','p<0.05','p>=0.05','NA','p_binomial'])
+    i = 1
+    for n in dat.charsets.keys():
+        dfx=df.groupby(['Charset']).get_group(n)
+        MPTS = dfx.groupby(['Test']).get_group('MPTS')
+        MPTIS = dfx.groupby(['Test']).get_group('MPTIS')
+        MPTMS = dfx.groupby(['Test']).get_group('MPTMS')
+        T[i][0]=n
+        T[i][1]='MPTS'
+        T[i][2]=len(np.where(MPTS[MPTS.columns[5]].values.astype(float)<0.05)[0])
+        T[i][3]=len(np.where(MPTS[MPTS.columns[5]].values.astype(float)>=0.05)[0])
+        T[i][4]=float(len(MPTS))-(float(T[i][2])+float(T[i][3]))
+        T[i][5]=binom_test(int(T[i][2]),n=(int(T[i][2])+int(T[i][3])),p=0.05)
+        i = i+1
+        T[i][0]=n
+        T[i][1]='MPTIS'
+        T[i][2]=len(np.where(MPTIS[MPTIS.columns[5]].values.astype(float)<0.05)[0])
+        T[i][3]=len(np.where(MPTIS[MPTIS.columns[5]].values.astype(float)>=0.05)[0])
+        T[i][4]=float(len(MPTIS))-(float(T[i][2])+float(T[i][3]))
+        T[i][5]=binom_test(int(T[i][2]),n=(int(T[i][2])+int(T[i][3])),p=0.05)
+        i = i+1
+        T[i][0]=n
+        T[i][1]='MPTMS'
+        T[i][2]=len(np.where(MPTMS[MPTMS.columns[5]].values.astype(float)<0.05)[0])
+        T[i][3]=len(np.where(MPTMS[MPTMS.columns[5]].values.astype(float)>=0.05)[0])
+        T[i][4]=float(len(MPTMS))-(float(T[i][2])+float(T[i][3]))
+        T[i][5]=binom_test(int(T[i][2]),n=(int(T[i][2])+int(T[i][3])),p=0.05)
+        i = i+1
+    #MPTS = df.groupby(['Test']).get_group('MPTS')
+    #MPTMS = df.groupby(['Test']).get_group('MPTMS')
+    #MPTIS = df.groupby(['Test']).get_group('MPTIS')
+    return T
 if __name__ == '__main__': 
-    aln_path = '/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
-    #input('input nex file here:')#'/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
+    aln_path = input('input nex file here:')
     start_time = time.time()
     dset=Path(aln_path).parts[-2]
     dat = Nexus.Nexus()
@@ -151,6 +189,9 @@ if __name__ == '__main__':
     aln = AlignIO.read(open(aln_path), "nexus")
     p = Test_aln(aln,dset,dat)
     df =pd.DataFrame(p[1:], columns=p[0])
+    #df1 = df.groupby('Test')
     #df = pd.DataFrame(p)
     df.to_csv("dataALT.csv")
+    table=pd.DataFrame(table(p)[1:],columns=table(p)[0])
+    table.to_csv('table.csv')
     print('process complete with no errors in', (time.time() - start_time))
