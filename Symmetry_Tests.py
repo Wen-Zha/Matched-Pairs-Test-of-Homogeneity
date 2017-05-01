@@ -19,6 +19,14 @@ def nCr(n,r):
     return f(n) // f(r) // f(n-r)
 
 def simMtx(a, x, y):
+    '''
+    inputs: a = alphabet (e.g. base pairs - 'ACGT')
+    x = sequence 1
+    y = sequence 2
+    
+    Thanks Daniel Forsman for improvements:
+    http://stackoverflow.com/questions/43511674/calculating-a-similarity-difference-matrix-from-equal-length-strings-in-python/43513055#43513055
+    '''
     a = np.array(list(a))
     x = np.array(list(x))
     y = np.array(list(y))
@@ -26,7 +34,16 @@ def simMtx(a, x, y):
     ay = (y[:, None] == a[None, :]).astype(int)
     return np.dot(ay.T, ax)
 
-def altMPTS(m):
+def MPTS(m):
+    '''
+    inputs: matrix of differences
+    outputs: MPTS test statistic
+    
+    Does the matched pairs test of symmetry
+    
+    Thanks  Miriam Farber for improvements:
+    http://stackoverflow.com/questions/43530744/sum-of-absolute-off-diagonal-differences-in-numpy-matrix/43530874?noredirect=1#comment74114344_43530874
+    '''
     d=(m+m.T)
     off_diag_indices=np.triu_indices(len(d),1)
     if 0 in d[off_diag_indices]:
@@ -35,8 +52,6 @@ def altMPTS(m):
         numerator=(m-m.T)**2
         denominator=m+m.T
         return np.sum(numerator[off_diag_indices]/denominator[off_diag_indices])
-
-    return p
 
 def MPTMS(m):
     """ inputs
@@ -67,8 +82,17 @@ def MPTMS(m):
 
 def MPTIS(MPTSs,MPTMSs):
     if isinstance(MPTSs,float) and isinstance(MPTMSs,float)==True:
-            s = MPTSs-MPTMSs
-            p = 1 - chi2.cdf(s,3.0)
+        s = MPTSs-MPTMSs
+    else:
+        s=float('NaN')
+    return s
+
+def pval(sval,v):
+    '''
+    Gets a test statistic and outputs a pvalue for a chi squarred test with degrees of freedom v
+    '''
+    if sval!=float('NaN'):
+        p=1.-float(chi2.cdf(sval,v))
     else:
         p=float('NaN')
     return p
@@ -95,24 +119,16 @@ def Test_aln(aln,dset,dat):
     i = 1
     #no = 946 (44 choose 2)* 3(no. tests) * 9 (no. of charsets)+1 for indexing
     no = nCr(len(aln),2)*3*len([len(v) for v in dat.charsets.keys()])+1
-    p=np.empty([no,6],dtype='U14')
+    p=np.empty([no,6],dtype='U21')
     p[0] = np.array(['Dataset','Charset','Test','Sp1','Sp2','p-value'])
     for n in dat.charsets.keys():
         for q in ite.combinations(list(range(len(aln))),2): #iterating over all taxa for sites
             m = simMtx('ACGT',aln_array[:,dat.charsets[n]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[n]][q[1]].tostring().upper().decode())
-            if altMPTS(m)!=float('NaN'):
-                MPTSpval=1.-float(chi2.cdf(altMPTS(m),6))
-            else:
-                MPTSpval=float('NaN')
-            if MPTMS(m)!=float('NaN'):
-                MPTMSpval = 1 - chi2.cdf(MPTMS(m),3.0)
-            else:
-                MPTMSpval=float('NaN')
-            p[i]=np.array([dset,n,'MPTS',aln[q[0]].name,aln[q[1]].name, MPTSpval])
+            p[i]=np.array([dset,n,'MPTS',aln[q[0]].name,aln[q[1]].name, pval(MPTS(m),6)])
             i = i+1
-            p[i]=np.array([dset,n,'MPTMS',aln[q[0]].name,aln[q[1]].name,MPTMSpval])
+            p[i]=np.array([dset,n,'MPTMS',aln[q[0]].name,aln[q[1]].name,pval(MPTMS(m),3)])
             i = i+1
-            p[i]=np.array([dset,n,'MPTIS',aln[q[0]].name,aln[q[1]].name,MPTIS(altMPTS(m),MPTMS(m))])
+            p[i]=np.array([dset,n,'MPTIS',aln[q[0]].name,aln[q[1]].name,pval(MPTIS(MPTS(m),MPTMS(m)),3)])
             i = i+1
     return p
 def plot(p):
@@ -134,6 +150,6 @@ if __name__ == '__main__':
     
     aln = AlignIO.read(open(aln_path), "nexus")
     p = Test_aln(aln,dset,dat)
-    #df = pd.DataFrame(p)
-    #df.to_csv("dataALT.csv")
+    df = pd.DataFrame(p)
+    df.to_csv("data1.csv")
     print('process complete with no errors in', (time.time() - start_time))
