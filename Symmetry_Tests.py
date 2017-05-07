@@ -8,6 +8,8 @@ from Bio import AlignIO
 import pandas as pd
 from pathlib import Path
 import math
+import seaborn as sns
+import matplotlib.pyplot as plt
 import time #only using time for timing/troubleshooting
 
 #import scipy.stats as sp
@@ -58,7 +60,7 @@ def MPTMS(m):
     """ inputs
             m: a 4x4 matrix of proportions
         outputs
-            p: is a p-value for the matched pairs test of marginal symmetry
+            p: is a pvalue for the matched pairs test of marginal symmetry
     """
     r = np.zeros((3))
     r[0]=np.sum(m[0])
@@ -121,7 +123,7 @@ def Test_aln(aln,dset,dat):
     #no = 946 (44 choose 2)* 3(no. tests) * 9 (no. of charsets)+1 for indexing
     no = nCr(len(aln),2)*3*len([len(v) for v in dat.charsets.keys()])+1
     p=np.empty([no,6],dtype='U21')
-    p[0] = np.array(['Dataset','Charset','Test','Sp1','Sp2','p-value'])
+    p[0] = np.array(['Dataset','Charset','Test','Sp1','Sp2','pvalue'])
     for n in dat.charsets.keys():
         for q in ite.combinations(list(range(len(aln))),2): #iterating over all taxa for sites
             m = simMtx('ACGT',aln_array[:,dat.charsets[n]][q[0]].tostring().upper().decode(),aln_array[:,dat.charsets[n]][q[1]].tostring().upper().decode())
@@ -132,54 +134,48 @@ def Test_aln(aln,dset,dat):
             p[i]=np.array([dset,n,'MPTIS',aln[q[0]].name,aln[q[1]].name,pval(MPTIS(MPTS(m),MPTMS(m)),3)])
             i = i+1
     return p
-def plot(p):
+def plot(df):
     '''
     inputs: p
     outputs: plot of pvalues for each test (hopefully)
     '''
-    p[1:,5::3].astype('float64')
+    plt.close()
+    sns.set(style="darkgrid")
+
+    df = df.dropna(subset=['pvalue'])
+
+    #tips = sns.load_dataset("tips")
+    g = sns.FacetGrid(df, row="Charset", col="Test", margin_titles=True)
+    bins = np.linspace(0, 1, 0.01)
+    g.map(plt.hist, "pvalue", color="steelblue", bins=bins, lw=0)
+    plt.show()
     return
+    
 def table(p):
     '''
-    inputs: matrix of pvalues from Test_aln
+    inputs: p = matrix of pvalues from Test_aln
     outputs: a summary table
     note: returns 'invalid value encountered in greater_equal' for 'nan' values but this does not affect the summary
     '''
+    Tests={'MPTS','MPTIS','MPTMS'}
     T=np.empty([len(dat.charsets.keys())*3+1,6], dtype='<U21')
     T[0]= np.array(['Charset','Test','p<0.05','p>=0.05','NA','p_binomial'])
     i = 1
     for n in dat.charsets.keys():
         dfx=df.groupby(['Charset']).get_group(n)
-        MPTS = dfx.groupby(['Test']).get_group('MPTS')
-        MPTIS = dfx.groupby(['Test']).get_group('MPTIS')
-        MPTMS = dfx.groupby(['Test']).get_group('MPTMS')
-        T[i][0]=n
-        T[i][1]='MPTS'
-        T[i][2]=len(np.where(MPTS[MPTS.columns[5]].values.astype(float)<0.05)[0])
-        T[i][3]=len(np.where(MPTS[MPTS.columns[5]].values.astype(float)>=0.05)[0])
-        T[i][4]=float(len(MPTS))-(float(T[i][2])+float(T[i][3]))
-        T[i][5]=binom_test(int(T[i][2]),n=(int(T[i][2])+int(T[i][3])),p=0.05)
-        i = i+1
-        T[i][0]=n
-        T[i][1]='MPTIS'
-        T[i][2]=len(np.where(MPTIS[MPTIS.columns[5]].values.astype(float)<0.05)[0])
-        T[i][3]=len(np.where(MPTIS[MPTIS.columns[5]].values.astype(float)>=0.05)[0])
-        T[i][4]=float(len(MPTIS))-(float(T[i][2])+float(T[i][3]))
-        T[i][5]=binom_test(int(T[i][2]),n=(int(T[i][2])+int(T[i][3])),p=0.05)
-        i = i+1
-        T[i][0]=n
-        T[i][1]='MPTMS'
-        T[i][2]=len(np.where(MPTMS[MPTMS.columns[5]].values.astype(float)<0.05)[0])
-        T[i][3]=len(np.where(MPTMS[MPTMS.columns[5]].values.astype(float)>=0.05)[0])
-        T[i][4]=float(len(MPTMS))-(float(T[i][2])+float(T[i][3]))
-        T[i][5]=binom_test(int(T[i][2]),n=(int(T[i][2])+int(T[i][3])),p=0.05)
-        i = i+1
-    #MPTS = df.groupby(['Test']).get_group('MPTS')
-    #MPTMS = df.groupby(['Test']).get_group('MPTMS')
-    #MPTIS = df.groupby(['Test']).get_group('MPTIS')
+        for m in Tests:
+            M = dfx.groupby(['Test']).get_group(m)
+            T[i][0]=n
+            T[i][1]=m
+            T[i][2]=len(np.where(M[M.columns[5]].values.astype(float)<0.05)[0])
+            T[i][3]=len(np.where(M[M.columns[5]].values.astype(float)>=0.05)[0])
+            T[i][4]=float(len(M))-(float(T[i][2])+float(T[i][3]))
+            T[i][5]=binom_test(int(T[i][2]),n=(int(T[i][2])+int(T[i][3])),p=0.05)
+            i = i+1
     return T
 if __name__ == '__main__': 
-    aln_path = input('input nex file here:')
+    aln_path ='/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
+    #input('input nex file here:')#'/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
     start_time = time.time()
     dset=Path(aln_path).parts[-2]
     dat = Nexus.Nexus()
@@ -191,7 +187,7 @@ if __name__ == '__main__':
     df =pd.DataFrame(p[1:], columns=p[0])
     #df1 = df.groupby('Test')
     #df = pd.DataFrame(p)
-    df.to_csv("dataALT.csv")
+    df.to_csv("data.csv")
     table=pd.DataFrame(table(p)[1:],columns=table(p)[0])
     table.to_csv('table.csv')
     print('process complete with no errors in', (time.time() - start_time))
