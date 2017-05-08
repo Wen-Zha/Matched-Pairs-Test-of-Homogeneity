@@ -94,10 +94,10 @@ def pval(sval,v):
     '''
     Gets a test statistic and outputs a pvalue for a chi squarred test with degrees of freedom v
     '''
-    if sval!=float('NaN'):
+    if math.isnan(sval)==False:
         p=1.-float(chi2.cdf(sval,v))
     else:
-        p=float('NaN')
+        p=-42
     return p
 
 def Test_aln(aln,dset,dat):
@@ -141,13 +141,15 @@ def plot(df):
     '''
     plt.close()
     sns.set(style="darkgrid")
+    df['pvalue']=pd.to_numeric(df['pvalue'])
 
-    df = df.dropna(subset=['pvalue'])
+    #df = df.dropna(subset=['pvalue'])
 
     #tips = sns.load_dataset("tips")
     g = sns.FacetGrid(df, row="Charset", col="Test", margin_titles=True)
-    bins = np.linspace(0, 1, 0.01)
+    bins = np.linspace(0,1,num=50)
     g.map(plt.hist, "pvalue", color="steelblue", bins=bins, lw=0)
+    plt.savefig('chart.png')
     plt.show()
     return
     
@@ -167,7 +169,7 @@ def table(p):
             M = dfx.groupby(['Test']).get_group(m)
             T[i][0]=n
             T[i][1]=m
-            T[i][2]=len(np.where(M[M.columns[5]].values.astype(float)<0.05)[0])
+            T[i][2]=len(np.where(np.absolute(M[M.columns[5]].values.astype(float))<0.05)[0])
             T[i][3]=len(np.where(M[M.columns[5]].values.astype(float)>=0.05)[0])
             T[i][4]=float(len(M))-(float(T[i][2])+float(T[i][3]))
             T[i][5]=binom_test(int(T[i][2]),n=(int(T[i][2])+int(T[i][3])),p=0.05)
@@ -188,6 +190,6 @@ if __name__ == '__main__':
     #df1 = df.groupby('Test')
     #df = pd.DataFrame(p)
     df.to_csv("data.csv")
-    table=pd.DataFrame(table(p)[1:],columns=table(p)[0])
-    table.to_csv('table.csv')
+    tab=pd.DataFrame(table(p)[1:],columns=table(p)[0])
+    #tab.to_csv('table.csv')
     print('process complete with no errors in', (time.time() - start_time))
