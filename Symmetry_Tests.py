@@ -1,6 +1,7 @@
 import numpy as np
 import itertools as ite
 from scipy.stats import chi2
+from scipy.stats import norm
 from scipy.stats import binom_test
 import scipy as sp
 from Bio.Nexus import Nexus
@@ -174,6 +175,7 @@ def pval(sval,v):
         p=1.-float(chi2.cdf(sval,v))
     else:
         p=-42
+        #using -42 rather than NaN because -42 is easier to work with in Pandas/Numpy conversions
     return p
 
 def Test_aln(aln,dset,dat):
@@ -219,10 +221,6 @@ def plot(df):
     sns.set(style="darkgrid")
     df.pvalue=pd.to_numeric(df.pvalue)
     df = df[df.pvalue != -42]
-
-    #df = df.dropna(subset=['pvalue'])
-
-    #tips = sns.load_dataset("tips")
     g = sns.FacetGrid(df, row="Charset", col="Test", margin_titles=True)
     bins = np.linspace(0,1,num=50)
     g.map(plt.hist, "pvalue", color="steelblue", bins=bins, lw=0)
@@ -248,18 +246,14 @@ def table(p):
             T[i][1]=m
             T[i][2]=len(np.where(np.absolute(M[M.columns[5]].values.astype(float))<0.05)[0])
             T[i][3]=len(np.where(M[M.columns[5]].values.astype(float)>=0.05)[0])
-            T[i][4]=float(len(M))-(float(T[i][2])+float(T[i][3]))
-            #T[i][5]=calcBin(int(T[i][2]),(int(T[i][2])+int(T[i][3]))) [0]
-            #T[i][5]=binom_test(int(T[i][2]),n=(int(T[i][2])+int(T[i][3])),p=0.05)
-            if (int(T[i][2])+int(T[i][3])) != 0:
-                T[i][5]=calcBin(int(T[i][2]),(int(T[i][2])+int(T[i][3])))[0]
-            else:
-                T[i][5]='-42'
+            T[i][4]=float(len(M))-(float(T[i][2])+
+            T[i][5]=norm.cdf(float(T[i][3]),0.95*(float(T[i][2])+float(T[i][3])),math.sqrt(0.0475*(float(T[i][2])+float(T[i][3]))))
+            #use normal distibution to approximate binomial distribution by the central limit theorem - makes it easier to asses the 'tail'
             i = i+1
     return T
 if __name__ == '__main__': 
-    aln_path ='/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
-    #input('input nex file here:')#'/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
+    aln_path = '/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
+    #input('input nex file here:')
     start_time = time.time()
     dset=Path(aln_path).parts[-2]
     dat = Nexus.Nexus()
@@ -269,9 +263,8 @@ if __name__ == '__main__':
     aln = AlignIO.read(open(aln_path), "nexus")
     p = Test_aln(aln,dset,dat)
     df =pd.DataFrame(p[1:], columns=p[0])
-    #df1 = df.groupby('Test')
-    #df = pd.DataFrame(p)
     df.to_csv("data.csv")
-    tab=pd.DataFrame(table(p)[1:],columns=table(p)[0])
-    #tab.to_csv('table.csv')
+    T=table(p)
+    tab=pd.DataFrame(T[1:],columns=table(p)[0])
+    tab.to_csv("table.csv")
     print('process complete with no errors in', (time.time() - start_time))
