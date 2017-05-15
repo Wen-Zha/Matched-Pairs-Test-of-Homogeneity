@@ -1,7 +1,6 @@
 import numpy as np
 import itertools as ite
 from scipy.stats import chi2
-from scipy.stats import norm
 from scipy.stats import binom_test
 import scipy as sp
 from Bio.Nexus import Nexus
@@ -12,82 +11,6 @@ import math
 import seaborn as sns
 import matplotlib.pyplot as plt
 import time #only using time for timing/troubleshooting
-
-def binP(N, p, x1, x2):
-    '''binomial function by Kurtis
-        taken from: http://stackoverflow.com/questions/13059011/is-there-any-python-function-library-for-calculate-binomial-confidence-intervals
-        '''
-    p = float(p)
-    q = p/(1-p)
-    k = 0.0
-    v = 1.0
-    s = 0.0
-    tot = 0.0
-
-    while(k<=N):
-            tot += v
-            if(k >= x1 and k <= x2):
-                    s += v
-            if(tot > 10**30):
-                    s = s/10**30
-                    tot = tot/10**30
-                    v = v/10**30
-            k += 1
-            v = v*q*(N+1-k)/k
-    return s/tot
-
-def calcBin(vx, vN, vCL = 95):
-    '''
-    binomial function by Kurtis
-        taken from: http://stackoverflow.com/questions/13059011/is-there-any-python-function-library-for-calculate-binomial-confidence-intervals
-    Calculate the exact confidence interval for a binomial proportion
-
-    Usage:
-    >>> calcBin(13,100)    
-    (0.07107391357421874, 0.21204372406005856)
-    >>> calcBin(4,7)   
-    (0.18405151367187494, 0.9010086059570312)
-    ''' 
-    vx = float(vx)
-    vN = float(vN)
-    #Set the confidence bounds
-    vTU = (100 - float(vCL))/2
-    vTL = vTU
-
-    vP = vx/vN
-    if(vx==0):
-            dl = 0.0
-    else:
-            v = vP/2
-            vsL = 0
-            vsH = vP
-            p = vTL/100
-
-            while((vsH-vsL) > 10**-5):
-                    if(binP(vN, v, vx, vN) > p):
-                            vsH = v
-                            v = (vsL+v)/2
-                    else:
-                            vsL = v
-                            v = (v+vsH)/2
-            dl = v
-
-    if(vx==vN):
-            ul = 1.0
-    else:
-            v = (1+vP)/2
-            vsL =vP
-            vsH = 1
-            p = vTU/100
-            while((vsH-vsL) > 10**-5):
-                    if(binP(vN, v, 0, vx) < p):
-                            vsH = v
-                            v = (vsL+v)/2
-                    else:
-                            vsL = v
-                            v = (v+vsH)/2
-            ul = v
-    return (dl, ul)
 
 #import scipy.stats as sp
 def nCr(n,r):
@@ -246,8 +169,8 @@ def table(p):
             T[i][1]=m
             T[i][2]=len(np.where(np.absolute(M[M.columns[5]].values.astype(float))<0.05)[0])
             T[i][3]=len(np.where(M[M.columns[5]].values.astype(float)>=0.05)[0])
-            T[i][4]=float(len(M))-(float(T[i][2])+
-            T[i][5]=norm.cdf(float(T[i][3]),0.95*(float(T[i][2])+float(T[i][3])),math.sqrt(0.0475*(float(T[i][2])+float(T[i][3]))))
+            T[i][4]=float(len(M))-(float(T[i][2])+float(T[i][3]))
+            T[i][5]=binom_test(int(T[i][2]),(int(T[i][2])+int(T[i][3])),p=0.05,alternative='greater')
             #use normal distibution to approximate binomial distribution by the central limit theorem - makes it easier to asses the 'tail'
             i = i+1
     return T
@@ -266,5 +189,5 @@ if __name__ == '__main__':
     df.to_csv("data.csv")
     T=table(p)
     tab=pd.DataFrame(T[1:],columns=table(p)[0])
-    tab.to_csv("table.csv")
+    tab.to_csv("tablebinom.csv")
     print('process complete with no errors in', (time.time() - start_time))
