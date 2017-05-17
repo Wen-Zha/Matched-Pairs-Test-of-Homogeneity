@@ -73,7 +73,7 @@ def MPTMS(m):
     V = np.zeros((3,3))
     for (i,j) in ite.product(range(0,3),range(0,3)):
         if i==j:
-            V[i,j]=r[i]+c[i]+2*m[i][i] #d_{i*}+d{*i}+2d{ii}
+            V[i,j]=r[i]+c[i]-2*m[i][i] #d_{i*}+d{*i}+2d{ii}
         elif i!=j:
             V[i,j]=-(m[i,j]+m[j,i])
     if sp.linalg.det(V) == 0:
@@ -135,7 +135,7 @@ def Test_aln(aln,dset,dat):
             p[i]=np.array([dset,n,'MPTIS',aln[q[0]].name,aln[q[1]].name,pval(MPTIS(MPTS(m),MPTMS(m)),3)])
             i = i+1
     return p
-def plot(df):
+def plot(df,dset):
     '''
     inputs: p
     outputs: plot of pvalues for each test (hopefully)
@@ -147,7 +147,7 @@ def plot(df):
     g = sns.FacetGrid(df, row="Charset", col="Test", margin_titles=True)
     bins = np.linspace(0,1,num=50)
     g.map(plt.hist, "pvalue", color="steelblue", bins=bins, lw=0)
-    plt.savefig('chart.png')
+    plt.savefig(dset+'chart.png')
     plt.show()
     return
     
@@ -175,8 +175,7 @@ def table(p):
             i = i+1
     return T
 if __name__ == '__main__': 
-    aln_path = '/Users/user/Documents/! ! 2017 ANU/Semester 1/SCNC2103/data reader/alignment.nex'
-    #input('input nex file here:')
+    aln_path = input('input nex file here:')
     start_time = time.time()
     dset=Path(aln_path).parts[-2]
     dat = Nexus.Nexus()
@@ -186,8 +185,9 @@ if __name__ == '__main__':
     aln = AlignIO.read(open(aln_path), "nexus")
     p = Test_aln(aln,dset,dat)
     df =pd.DataFrame(p[1:], columns=p[0])
-    df.to_csv("data.csv")
+    df.to_csv(dset+"data.csv")
     T=table(p)
     tab=pd.DataFrame(T[1:],columns=table(p)[0])
-    tab.to_csv("tablebinom.csv")
+    tab.to_csv(dset+"tablebinom.csv")
+    #plot(df,dset)
     print('process complete with no errors in', (time.time() - start_time))
