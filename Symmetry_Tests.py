@@ -39,8 +39,8 @@ def simMtx(a, x, y):
 
 def MPTS(m):
     '''
-    inputs: matrix of differences
-    outputs: MPTS test statistic
+    inputs: m = matrix of differences
+    outputs: s = MPTS test statistic
     
     Does the matched pairs test of symmetry
     
@@ -60,7 +60,7 @@ def MPTMS(m):
     """ inputs
             m: a 4x4 matrix of proportions
         outputs
-            p: is a pvalue for the matched pairs test of marginal symmetry
+            s: test statistic for matched pairs test of marginal symmetry
     """
     r = np.zeros((3))
     r[0]=np.sum(m[0])
@@ -73,7 +73,7 @@ def MPTMS(m):
     V = np.zeros((3,3))
     for (i,j) in ite.product(range(0,3),range(0,3)):
         if i==j:
-            V[i,j]=r[i]+c[i]-2*m[i][i] #d_{i*}+d{*i}+2d{ii}
+            V[i,j]=r[i]+c[i]-2*m[i][i]
         elif i!=j:
             V[i,j]=-(m[i,j]+m[j,i])
     if sp.linalg.det(V) == 0:
@@ -84,6 +84,13 @@ def MPTMS(m):
     return s
 
 def MPTIS(MPTSs,MPTMSs):
+    '''
+    inputs:
+        MPTS: test statistic from MPTS (float)
+        MPTMS: test statistic from MPTMS (float)
+    outputs:
+        s: test statistic for MPTIS
+    '''
     if isinstance(MPTSs,float) and isinstance(MPTMSs,float)==True:
         s = MPTSs-MPTMSs
     else:
@@ -102,16 +109,7 @@ def pval(sval,v):
     return p
 
 def Test_aln(aln,dset,dat):
-    """
-    needs packages:
-    import numpy as np
-    import itertools as ite
-    from scipy.stats import chi2
-    import scipy as sp
-    from Bio.Nexus import Nexus
-    from Bio import AlignIO
-    from pathlib import Path
-    import math    
+    """    
         inputs 
             charset_aln = alignment array of sites
         output
@@ -171,10 +169,10 @@ def table(p):
             T[i][3]=len(np.where(M[M.columns[5]].values.astype(float)>=0.05)[0])
             T[i][4]=float(len(M))-(float(T[i][2])+float(T[i][3]))
             T[i][5]=binom_test(int(T[i][2]),(int(T[i][2])+int(T[i][3])),p=0.05,alternative='greater')
-            #use normal distibution to approximate binomial distribution by the central limit theorem - makes it easier to asses the 'tail'
             i = i+1
     return T
 if __name__ == '__main__': 
+    #main script: runs all three tests on an alignment
     aln_path = input('input nex file here:')
     start_time = time.time()
     dset=Path(aln_path).parts[-2]
@@ -189,5 +187,5 @@ if __name__ == '__main__':
     T=table(p)
     tab=pd.DataFrame(T[1:],columns=table(p)[0])
     tab.to_csv(dset+"tablebinom.csv")
-    #plot(df,dset)
+    #plot(df,dset) #this line plots but has been 'turned off' for use with larger datasets
     print('process complete with no errors in', (time.time() - start_time))
