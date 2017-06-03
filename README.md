@@ -12,14 +12,14 @@ For sufficiently small datasets, plot(df,dset) will return a plot of the results
 # Quick Start Guide for Jupyter
 Change working directory to file path of Symmetry_Tests.py
 
-  e.g. cd 'file path of Symmetry_Tests.py'
+    e.g. cd 'file path of Symmetry_Tests.py'
   
 run program
 
-  %run 'Symmetry_Tests.py'
+    %run 'Symmetry_Tests.py'
   
 when prompted input path of alignment
 
-  input nex file here: file path of alignment/alignment.nex (no '' needed)
+    input nex file here: file path of alignment/alignment.nex (no '' needed)
   
 Your results (summary table and all results) will be outputed as a csv file in the working direcotry
