@@ -12,7 +12,7 @@ For sufficiently small datasets, plot(df,dset) will return a plot of the results
 # Quick Start Guide for Jupyter
 Change working directory to file path of Symmetry_Tests.py
 
-    e.g. cd 'file path of Symmetry_Tests.py'
+    cd 'file path of Symmetry_Tests.py'
   
 run program
 
